@@ -1,0 +1,12 @@
+version: "3"
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    depends_on:
+      - firefox
+  firefox:
+    image: selenium/standalone-firefox:latest
+    ports:
+      - "4444:4444"
