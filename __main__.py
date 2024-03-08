@@ -64,7 +64,7 @@ def DingMsg(Msg):
         "Content-Type": "application/json ;charset=utf-8 "
     }
     # 这里的message是你想要推送的文字消息
-    message = "@时间：" + Msg
+    message = "猫猫：" + Msg
     stringBody = {
         "msgtype": "text",
         "text": {"content": message},
@@ -108,7 +108,7 @@ def main():
         driver.get(r'https://changjiang.yuketang.cn/v2/web/index')
         while(0):
             if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
-                DingMsg()
+                DingMsg("雨课堂开始上课了")
                 sleep(10)
                 driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
             sleep(10)
