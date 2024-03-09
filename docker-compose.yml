@@ -6,6 +6,12 @@ services:
       - .:/app
     depends_on:
       - firefox
+    environment:
+      - REMOTE_FIREFOX=http://firefox:4444
+      - CHANGJIANG_USER=
+      - CHANGJIANG_PASSWORD=
+      - CSRFTOKEN=
+      - SESSIONID=
   firefox:
     image: selenium/standalone-firefox:latest
     ports:

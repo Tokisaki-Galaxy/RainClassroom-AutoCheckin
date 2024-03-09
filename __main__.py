@@ -64,7 +64,7 @@ def DingMsg(Msg):
         "Content-Type": "application/json ;charset=utf-8 "
     }
     # 这里的message是你想要推送的文字消息
-    message = "猫猫：" + Msg
+    message = "猫猫：\n" + Msg
     stringBody = {
         "msgtype": "text",
         "text": {"content": message},
@@ -81,6 +81,7 @@ def main():
     # 创建一个浏览器实例
     if os.getenv("RUNNING_IN_DOCKER"):
         try:
+            sleep(10)
             driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX)
         except:
             print("连接远程selenium出错:", Exception)
@@ -105,17 +106,20 @@ def main():
             print(new_dict)
             driver.add_cookie(new_dict)
         driver.get(r'https://changjiang.yuketang.cn/v2/web/index')
+        # 登陆失败的话到登录界面，通过是否有切换按钮可以判断登陆成功
         if driver.find_elements_by_xpath('//img[@class="changeImg"]'):
             raise(AssertionError)
+        print("登陆成功")
     except:
         # 若cookie登陆失败采用用户密码登陆
         userpwdlogin(driver)
 
     try:
         driver.get(r'https://changjiang.yuketang.cn/v2/web/index')
-        while(0):
+        while(1):
             if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
-                DingMsg("雨课堂开始上课了")
+                DingMsg("雨课堂开始上课了,10秒后自动签到")
+                print("雨课堂开始上课")
                 sleep(10)
                 driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
             sleep(10)
