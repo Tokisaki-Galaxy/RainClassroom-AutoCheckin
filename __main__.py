@@ -48,8 +48,8 @@ def simulate_random_mouse(driver):
     actions.perform()
 
 # 账户密码登陆
-# TODO: 还没做完，有个滑块验证码没有处理
-def userpwdlogin(driver):
+# TODO: 还没做完，有个滑块v验证码没有处理
+def userpwd_login(driver):
     driver.find_element_by_xpath('//img[@class="changeImg"]').click()
     driver.find_element_by_xpath('//div[@data-type="phone"]').click()
     # 在输入时解码
@@ -73,32 +73,25 @@ def DingMsg(Msg):
             "isAtAll": "true"  # @所有人 时为true，上面的atMobiles就失效了
         }
     }
-    MessageBody = json.dumps(stringBody)
-    result = requests.post(url=os.getenv("DING_WEBHOOK"), data=MessageBody, headers=HEADERS)
-    print(result.text)
-
-def main():
-    # 创建一个浏览器实例
-    if os.getenv("RUNNING_IN_DOCKER"):
-        try:
-            sleep(10)
-            driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX)
-        except:
-            print("连接远程selenium出错:", Exception)
-    else:
-        driver = webdriver.Edge()
-        
-    # 打开网页
     try:
-        driver.get(r'https://changjiang.yuketang.cn/web/?next=/v2/web/index')
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
-    except:
-        print("=====网络连接错误，无法连接到雨课堂=====",Exception)
+        MessageBody = json.dumps(stringBody)
+        result = requests.post(url=os.getenv("DING_WEBHOOK"), data=MessageBody, headers=HEADERS)
+        print(result.text)
+        print("已发送信息:",Msg)
+    except Exception as e:
+        print("钉钉机器人发送错误:",e)
 
+# 检查登陆是否有效
+def check_cred_valid(driver):
+    if driver.find_elements_by_xpath('//img[@class="changeImg"]'):
+        raise(AssertionError)
+    
+# 尝试登陆
+def login(driver):
     print("========Try Login=========")
     # 首先尝试cookie登陆
     try:
-        # 构造新的cookie
+        # 删除现有cookie，构造新的cookie
         driver.delete_all_cookies()
         for i in range(2):
             last_item = list(changjiang.items())[-1-i]
@@ -106,25 +99,56 @@ def main():
             print(new_dict)
             driver.add_cookie(new_dict)
         driver.get(r'https://changjiang.yuketang.cn/v2/web/index')
-        # 登陆失败的话到登录界面，通过是否有切换按钮可以判断登陆成功
-        if driver.find_elements_by_xpath('//img[@class="changeImg"]'):
-            raise(AssertionError)
+        # 检测是否登陆成功
+        check_cred_valid(driver)
         print("登陆成功")
     except:
-        # 若cookie登陆失败采用用户密码登陆
-        userpwdlogin(driver)
+        # 若cookie登陆失败尝试采用用户密码登陆
+        try:
+            userpwd_login(driver)
+            check_cred_valid(driver)
+        except:
+            DingMsg("登陆失败,请更新cookie")
+            exit(1)
+
+def main():
+    # 创建一个浏览器实例
+    if os.getenv("RUNNING_IN_DOCKER"):
+        try:
+            sleep(10)
+            driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX)
+        except Exception as e:
+            DingMsg("连接远程selenium出错:", e)
+    else:
+        driver = webdriver.Edge()
+        
+    # 打开网页
+    try:
+        driver.get(r'https://changjiang.yuketang.cn/web/?next=/v2/web/index')
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
+    except Exception as e:
+        DingMsg("=====网络连接错误，无法连接到雨课堂=====",e)
+
+    login(driver)
 
     try:
         driver.get(r'https://changjiang.yuketang.cn/v2/web/index')
+        i=0
         while(1):
+            i+=1
             if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
                 DingMsg("雨课堂开始上课了,10秒后自动签到")
-                print("雨课堂开始上课")
                 sleep(10)
                 driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
             sleep(10)
             driver.refresh()
-    except:
+            if i>=10:
+                try:
+                    check_cred_valid(driver)
+                except:
+                    login(driver)
+    except Exception as e:
+        DingMsg("未知错误，即将退出:",e)
         sleep(5)
         driver.close()
 
