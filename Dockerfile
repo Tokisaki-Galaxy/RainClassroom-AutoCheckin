@@ -7,6 +7,9 @@ WORKDIR /app
 # 将当前目录内容复制到容器的/app目录中
 COPY . /app
 
+# 更新pip和setuptools
+RUN pip install --upgrade pip setuptools wheel
+
 # 安装项目需要的包
 RUN pip install --no-cache-dir -r requirements.txt
 
