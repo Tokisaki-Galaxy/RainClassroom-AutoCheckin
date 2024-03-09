@@ -80,13 +80,20 @@ def DingMsg(Msg):
 def main():
     # 创建一个浏览器实例
     if os.getenv("RUNNING_IN_DOCKER"):
-        driver = webdriver.Remote("http://selenium.railway.internal:4444", DesiredCapabilities.FIREFOX)
+        try:
+            driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX)
+        except:
+            print("连接远程selenium出错:", Exception)
     else:
         driver = webdriver.Edge()
+        
     # 打开网页
-    driver.get(r'https://changjiang.yuketang.cn/web/?next=/v2/web/index')
-    #simulate_random_mouse(driver)
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
+    try:
+        driver.get(r'https://changjiang.yuketang.cn/web/?next=/v2/web/index')
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
+    except:
+        print("=====网络连接错误，无法连接到雨课堂=====",Exception)
+
     print("========Try Login=========")
     # 首先尝试cookie登陆
     try:
@@ -118,4 +125,8 @@ def main():
         driver.close()
 
 if '__main__' == __name__:
+    # 用于直接运行py调试的时候环境变量设置
+    if not os.getenv("RUNNING_IN_DOCKER"):
+        import dotenv
+        dotenv.load_dotenv('.env')
     main()

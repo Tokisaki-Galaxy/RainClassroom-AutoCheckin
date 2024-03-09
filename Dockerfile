@@ -8,10 +8,18 @@ WORKDIR /app
 COPY . /app
 
 # 更新pip和setuptools
-RUN pip install --upgrade pip setuptools wheel
+RUN if [ "$USE_CHINA_MIRROR" = "true" ] ; then \
+    pip install -i https://mirrors.aliyun.com/pypi/simple/ --upgrade pip setuptools wheel ; \
+else \
+    pip install --upgrade pip setuptools wheel ; \
+fi
 
 # 安装项目需要的包
-RUN pip install --no-cache-dir -r requirements.txt
+RUN if [ "$USE_CHINA_MIRROR" = "true" ] ; then \
+    pip install -i https://mirrors.aliyun.com/pypi/simple/ --no-cache-dir -r requirements.txt ; \
+else \
+    pip install --no-cache-dir -r requirements.txt ; \
+fi
 
 # 设置环境变量
 ENV RUNNING_IN_DOCKER=true
