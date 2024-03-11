@@ -48,7 +48,7 @@ def simulate_random_mouse(driver):
     actions.perform()
 
 # 账户密码登陆
-# TODO: 还没做完，有个滑块v验证码没有处理
+# TODO: 还没做完，有个滑块验证码没有处理
 def userpwd_login(driver):
     driver.find_element_by_xpath('//img[@class="changeImg"]').click()
     driver.find_element_by_xpath('//div[@data-type="phone"]').click()
@@ -118,24 +118,47 @@ def inlesson(driver):
     try:
         # 保存当前窗口的句柄
         current_window = driver.current_window_handle
-        
+        isLesson = False
         DingMsg("雨课堂开始上课了,10秒后自动签到")
         sleep(10)
-        driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
+        try:
+            driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
+            # 切换到新的窗口
+            driver.switch_to.window(driver.window_handles[-1])
 
-        # 切换到新的窗口
-        driver.switch_to.window(driver.window_handles[-1])
+            h3_elements = driver.find_elements_by_tag_name('h3')
+            for h3 in h3_elements:
+                span_elements = h3.find_elements_by_xpath('.//span[text()="课堂动态"]')
+                if span_elements:
+                    isLesson = True
+            #<div title="上课啦！" class="timeline__msg f12">上课啦！</div>
+            #<h3 data-v-4c2a6625="" class="nav__header box-between"><span data-v-4c2a6625="">课堂动态</span> <i data-v-4c2a6625="" class="iconfont icon-guanbi1 f16 c9b pointer"></i></h3>
+            if driver.find_element_by_xpath('//div[@title="上课啦！" and text()="上课啦！"]') and isLesson:
+                DingMsg("课程："+driver.title+" "+driver.find_element_by_tag_name('h3')[0]+"开始")
+        except:
+            DingMsg("签到出错，尝试重试")
+            pass
 
         # 在新的窗口中检查元素，有没有上课了的提示
-        if driver.find_elements_by_xpath('//元素的xpath'):
-            print("在新的页面中找到了元素")
-        else:
-            print("在新的页面中没有找到元素")
         while(1):
             sleep(10)
             driver.refresh()
-            # 如果有下课的提示
+            # 如果短时间内大量重复弹幕，超过两条
+            #<section data-v-2e8450a6="" class="danmu__container"><section data-v-2e8450a6="" class="danmu__wrap"><ul data-v-2e8450a6="" class="danmu__list"><li data-v-2e8450a6="" class="danmu__item J_danmu enter"><p data-v-2e8450a6="" class="danmu--text f12"><!----> <span data-v-2e8450a6="">1</span></p></li><li data-v-2e8450a6="" class="danmu__item J_danmu enter"><p data-v-2e8450a6="" class="danmu--text f12"><!----> <span data-v-2e8450a6="">1</span></p></li><li data-v-2e8450a6="" class="danmu__item J_danmu enter"><p data-v-2e8450a6="" class="danmu--text f12"><!----> <span data-v-2e8450a6="">1</span></p></li><li data-v-2e8450a6="" class="danmu__item J_danmu enter"><p data-v-2e8450a6="" class="danmu--text f12"><!----> <span data-v-2e8450a6="">1</span></p></li><li data-v-2e8450a6="" class="danmu__item J_danmu enter"><p data-v-2e8450a6="" class="danmu--text f12"><!----> <span data-v-2e8450a6="">1</span></p></li><li data-v-2e8450a6="" class="danmu__item J_danmu enter"><p data-v-2e8450a6="" class="danmu--text f12"><!----> <span data-v-2e8450a6="">2</span></p></li></ul></section></section>
+            #<input data-v-2e8450a6="" type="text" placeholder="说点什么" class="danmu__ipt J_input f12 cfff">
+            #<p data-v-76a19726="" title="弹幕" class="action__danmu box-center f12 cfff active">弹</p>
+            #<p data-v-76a19726="" title="弹幕" class="action__danmu box-center f12 cfff">弹</p>
+            #<p data-v-2e8450a6="" class="danmu__send box-center cfff">发送</p>
+            # 如果有题目发布
             if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
+                DingMsg("有题目发布，距离截止")
+            # 如果有随机点名
+            #<div title="随机点名选中：傅玉权2306020108" class="timeline__msg f12">随机点名选中：傅玉权2306020108</div>
+            if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
+                DingMsg("课程结束")
+            # 如果有下课的提示
+            #<div title="下课啦！" class="timeline__msg f12">下课啦！</div>
+            if driver.find_element_by_xpath('//div[@title="下课啦！" and text()="上课啦！"]'):
                 DingMsg("课程结束")
                 break
         driver.switch_to.windows(current_window)
