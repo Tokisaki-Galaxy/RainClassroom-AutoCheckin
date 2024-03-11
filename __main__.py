@@ -75,8 +75,11 @@ def DingMsg(Msg):
     }
     try:
         MessageBody = json.dumps(stringBody)
-        result = requests.post(url=os.getenv("DING_WEBHOOK"), data=MessageBody, headers=HEADERS)
+        result = requests.post(url=("https://oapi.dingtalk.com/robot/send?access_token="+os.getenv("DING_WEBHOOK_TOKEN")), data=MessageBody, headers=HEADERS)
+        print(os.getenv("DING_WEBHOOK_TOKEN"))
         print(result.text)
+        if result.json().get('errcode') != 0:
+            print("钉钉机器人发送错误:", result.json().get('errmsg'))
         print("已发送信息:",Msg)
     except Exception as e:
         print("钉钉机器人发送错误:",e)
@@ -107,9 +110,37 @@ def login(driver):
         try:
             userpwd_login(driver)
             check_cred_valid(driver)
-        except:
+        except Exception as e:
             DingMsg("登陆失败,请更新cookie")
             exit(1)
+
+def inlesson(driver):
+    try:
+        # 保存当前窗口的句柄
+        current_window = driver.current_window_handle
+        
+        DingMsg("雨课堂开始上课了,10秒后自动签到")
+        sleep(10)
+        driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
+
+        # 切换到新的窗口
+        driver.switch_to.window(driver.window_handles[-1])
+
+        # 在新的窗口中检查元素，有没有上课了的提示
+        if driver.find_elements_by_xpath('//元素的xpath'):
+            print("在新的页面中找到了元素")
+        else:
+            print("在新的页面中没有找到元素")
+        while(1):
+            sleep(10)
+            driver.refresh()
+            # 如果有下课的提示
+            if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
+                DingMsg("课程结束")
+                break
+        driver.switch_to.windows(current_window)
+    except Exception as e:
+        pass
 
 def main():
     # 创建一个浏览器实例
@@ -133,13 +164,13 @@ def main():
 
     try:
         driver.get(r'https://changjiang.yuketang.cn/v2/web/index')
+
+        DingMsg("监测开始")
         i=0
         while(1):
             i+=1
             if driver.find_elements_by_xpath('//div[@class="name-box"]/span[@class="name"]'):
-                DingMsg("雨课堂开始上课了,10秒后自动签到")
-                sleep(10)
-                driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
+                inlesson(driver)
             sleep(10)
             driver.refresh()
             if i>=10:
@@ -148,7 +179,7 @@ def main():
                 except:
                     login(driver)
     except Exception as e:
-        DingMsg("未知错误，即将退出:",e)
+        print("未知错误，即将退出:",e)
         sleep(5)
         driver.close()
 

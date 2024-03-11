@@ -19,7 +19,8 @@
 若使用python部署，填入`.env`里面。
 
 #### 钉钉机器人WebHook
-创建群自定义机器人，得到DING_WEBHOOK，填入`docker-compose.yml`或`.env`里面。
+创建群自定义机器人，得到DING_WEBHOOK_TOKEN，填入`docker-compose.yml`或`.env`里面。
+例如https://oapi.dingtalk.com/robot/send?access_token=xxxxxxxxxx，就只用写后面access_token=后面的xxxxxxxxxx即可。
 
 #### 程序部署方式一、Docker
 ```shell
