@@ -262,8 +262,7 @@ def main():
         while(1):
             cre_i+=1
             # 找到name-box元素
-            #name_box =   driver.find_elements_by_css_selector('.name-box')
-            name_box=0
+            name_box =   driver.find_elements_by_css_selector('.name-box')
             both_class = driver.find_elements_by_css_selector('.iconfont.icon.icon--shuangjiantouxiangxia')
             # 检查是否找到了name-box元素
             if name_box or both_class:
@@ -284,10 +283,12 @@ def main():
                         result.append([lesson_spans[0].text, lesson_ps.text, lesson_spans[1].text])
                     for i in result:
                         if i[0]=='听':
-                            DingMsg("雨课堂开始上课了,这节课是"+i[1]+",20秒后自动签到。\n请注意,当前有多个课程："+str(result))
+                            DingMsg("雨课堂开始上课了,这节课是"+i[1]+",20秒后自动签到。\
+                                    \n请注意,当前有多个课程：\n"+'\n'.join(map(str, result)))
                             inlesson(driver)
                         elif i[0]=='考试':
-                            DingMsg("处于考试状态，将停止监控上课。当前正在考试科目："+i[2]+"\n请注意,当前有多个课程："+str(result))
+                            DingMsg("处于考试状态，将停止监控上课。当前正在考试科目："+i[2]+"\
+                                    \n请注意,当前有多个课程：\n"+'\n'.join(map(str, result)))
                 elif name_box:
                     # 找到所有的span元素
                     spans = name_box[0].find_elements_by_tag_name('span')
@@ -295,7 +296,7 @@ def main():
                     if spans[0].text == "考":
                         DingMsg("处于考试状态，将停止监控上课。当前正在考试科目："+spans[1].text)
                     elif spans[0].text == '听':
-                        DingMsg("雨课堂开始上课了,10秒后自动签到")
+                        DingMsg("雨课堂开始上课了,20秒后自动签到")
                         inlesson(driver)
             sleep(10)
             name_box=0;both_class=0
