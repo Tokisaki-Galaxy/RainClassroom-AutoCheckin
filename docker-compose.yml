@@ -8,10 +8,10 @@ services:
       - firefox
     environment:
       - REMOTE_FIREFOX=http://firefox:4444
-      - CHANGJIANG_USER=
-      - CHANGJIANG_PASSWORD=
-      - CSRFTOKEN=
-      - SESSIONID=
+      - CHANGJIANG_USER=BASE111
+      - CHANGJIANG_PASSWORD=BASE111
+      - CSRFTOKEN=game5adoeQpnUuXBKM0SiFDJhvWl3efc
+      - SESSIONID=fqz31bjy28gug4m0z6rocoys82izh4mv
   firefox:
     image: selenium/standalone-firefox:latest
     ports:
