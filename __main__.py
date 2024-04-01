@@ -86,7 +86,7 @@ def DingMsg(Msg):
         print("已发送信息:",Msg)
         dmsg = Msg
     except Exception as e:
-        print("钉钉机器人发送错误:",e)
+        print("钉钉机器人发送错误:",str(e))
 
 # 检查登陆是否有效
 def check_cred_valid(driver):
@@ -120,21 +120,19 @@ def login(driver):
 
 # 每节课中的节的处理
 def refresh_section(driver):
-    data={}
+    data=[]
     # 找到所有的section元素
-    sections = driver.find_elements_by_css_selector('section.nav__list.timeline__wrap')
+    sections = driver.find_elements_by_css_selector('div.nav__list > div.timeline__wrap > div.timeline__item')
     # 遍历所有的section元素
     for section in sections:
         # 获取data-index属性
-        data_index = section.get_attribute('data-index')
-    # 找到嵌套的div元素
-    div = section.find_element_by_xpath('.//div')
-    # 获取div元素的title属性和内容
-    title = div.get_attribute('title')
-    content = div.text
-
-    # 保存数据
-    data[data_index] = {'title': title, 'content': content}
+        ppt_num = section.get_attribute('data-index')
+        try:
+            ppt_time = section.find_element_by_css_selector('div.timeline__footer.box-between').text
+        except:
+            ppt_time = -1
+        data.append((ppt_num,ppt_time,section))
+    DingMsg(data)
     return data
 
 # 对弹幕列表的处理
@@ -186,6 +184,7 @@ def inlesson(driver):
             driver.find_element_by_xpath('//div[@class="name-box"]/span[@class="name"]').click()
             # 切换到新的窗口
             driver.switch_to.window(driver.window_handles[-1])
+            sleep(5)
 
             h3_elements = driver.find_elements_by_tag_name('h3')
             for h3 in h3_elements:
@@ -194,21 +193,31 @@ def inlesson(driver):
                     isLesson = True
             #<div title="上课啦！" class="timeline__msg f12">上课啦！</div>
             #<h3 data-v-4c2a6625="" class="nav__header box-between"><span data-v-4c2a6625="">课堂动态</span> <i data-v-4c2a6625="" class="iconfont icon-guanbi1 f16 c9b pointer"></i></h3>
-            if driver.find_element_by_xpath('//div[@title="上课啦！" and text()="上课啦！"]') and isLesson:
-                DingMsg("课程："+driver.title+" "+driver.find_element_by_tag_name('h3')[0]+"开始")
-        except:
-            DingMsg("签到出错，尝试重试")
+            if driver.find_elements_by_xpath('//div[starts-with(@title, "上课啦")]') and isLesson:
+                DingMsg("课程："+driver.title+" "+driver.find_elements_by_tag_name('h3')[0].text+"开始")
+        except Exception as e:
+            DingMsg("签到出错，尝试重试"+str(e))
             pass
 
         # 在新的窗口中检查元素，有没有上课了的提示
         while(1):
             sleep(10)
-            driver.refresh()
-            # 目前没必要使用这个功能
-            #section_data=refresh_section()
-            #for each in section_data:
-            #    data_index = each
-            refresh_danmu(driver)
+            if False:
+                driver.refresh()
+                try:
+                    driver.switch_to.alert.accept()
+                except:
+                    pass
+            try:
+                section_data=refresh_section(driver)
+                print(section_data)
+                section_data[-2][2].click()
+                section_data[-1][2].click()
+            except:
+                pass
+
+            if driver.find_elements_by_css_selector('section.danmu__container'):
+                refresh_danmu(driver)
             # 如果有题目发布
             if driver.find_elements_by_css_selector('div.time-box'):
                 DingMsg("有题目发布，"+driver.find_element_by_css_selector('div.time-box > div.timing.timing--number').text)
@@ -222,10 +231,14 @@ def inlesson(driver):
                 DingMsg("课程结束")
                 break
         driver.close()
-        driver.switch_to.windows(current_window)
+        try:
+            driver.switch_to.alert.accept()
+        except:
+            pass
+        driver.switch_to.window(current_window)
     except Exception as e:
-        DingMsg("上课时碰到问题"+e)
-        driver.switch_to.windows(current_window)
+        DingMsg("上课时碰到问题"+str(e))
+        driver.switch_to.window(current_window)
         pass
 
 def main():
@@ -237,7 +250,7 @@ def main():
             options.set_preference("intl.accept_languages", "zh-CN")
             driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX,options=options)
         except Exception as e:
-            DingMsg("连接远程selenium出错:", e)
+            DingMsg("连接远程selenium出错:", str(e))
     else:
         driver = webdriver.Edge()
         
@@ -246,7 +259,7 @@ def main():
         driver.get(r'https://changjiang.yuketang.cn/web/?next=/v2/web/index')
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
     except Exception as e:
-        DingMsg("=====网络连接错误，无法连接到雨课堂=====",e)
+        DingMsg("=====网络连接错误，无法连接到雨课堂=====",str(e))
 
     login(driver)
 
@@ -308,7 +321,7 @@ def main():
                 except:
                     login(driver)
     except Exception as e:
-        print("未知错误，即将退出:",e)
+        print("未知错误，即将退出:",str(e))
         sleep(5)
         driver.close()
 
