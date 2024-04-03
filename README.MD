@@ -25,15 +25,28 @@
 创建群自定义机器人，得到DING_WEBHOOK_TOKEN，填入`docker-compose.yml`或`.env`里面。
 例如https://oapi.dingtalk.com/robot/send?access_token=xxxxxxxxxx，就只用写后面access_token=后面的xxxxxxxxxx即可。
 
-#### 程序部署方式一、Docker
+#### 程序部署方式一、Docker(不推荐，容器运行占用极高，非常卡)
 ```shell
 docker pull galaxysirius/changjiang-autocheckin-selenium
 docker pull selenium/standalone-firefox:latest
 docker-compose up
 ```
 
-#### 程序部署方式二、python
-安装Edge，EdgeDriver
+#### 程序部署方式二、python(推荐，资源占用合理)
+安装Firefox，GeckoDriver。记得ubuntu不要安装snap版的firefox，那个和docker一样运行很慢，容器本身占用很高
 ```shell
-python3 __main__.py
+# 安装firefox
+wget https://download-ssl.firefox.com.cn/releases/firefox/esr/115.1/zh-CN/Firefox-latest-x86_64.tar.bz2
+tar xvf Firefox-latest-x86_64.tar.bz2
+sudo mv firefox/ /opt
+sudo ln -s /opt/firefox/firefox /usr/bin/firefox
+
+# 安装GeckoDriver
+wget https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz
+tar xvf geckodriver-v0.34.0-linux64.tar.gz
+sudo mv geckodriver /usr/bin
+```
+输入`firefox`如果出现下面的就代表正常，如果出现其他的请百度，安装相应的运行库
+```shell
+Error: no DISPLAY environment variable specified
 ```
