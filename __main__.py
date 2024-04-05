@@ -14,13 +14,6 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 dmsg=0 #上一条信息，防止大量重复发送
 
-changjiang = {
-    "changjiang_user": os.getenv("CHANGJIANG_USER"),
-    "changjiang_password": os.getenv("CHANGJIANG_PASSWORD"),
-    "csrftoken": os.getenv("CSRFTOKEN"),
-    "sessionid": os.getenv("SESSIONID"),
-}
-
 # 模拟鼠标移动
 # TODO: 没做完，但是似乎没必要
 def simulate_random_mouse(driver):
@@ -248,18 +241,24 @@ def main():
             sleep(10)
             options = webdriver.FirefoxOptions()
             options.set_preference("intl.accept_languages", "zh-CN")
-            driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX,options=options)
+            options.headless = True
+            options.page_load_strategy = 'eager'
+            driver = webdriver.Remote(os.getenv("REMOTE_FIREFOX"), DesiredCapabilities.FIREFOX, options=options)
         except Exception as e:
-            DingMsg("连接远程selenium出错:", str(e))
+            DingMsg("连接远程selenium出错:"+ str(e))
     else:
-        driver = webdriver.Edge()
+        options = webdriver.FirefoxOptions()
+        options.set_preference("intl.accept_languages", "zh-CN")
+        options.headless = True
+        options.page_load_strategy = 'eager'
+        driver = webdriver.Firefox(options=options)
         
     # 打开网页
     try:
         driver.get(r'https://changjiang.yuketang.cn/web/?next=/v2/web/index')
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
+        WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//img[@class="changeImg"]')))
     except Exception as e:
-        DingMsg("=====网络连接错误，无法连接到雨课堂=====",str(e))
+        DingMsg("=====网络连接错误，无法连接到雨课堂====="+str(e))
 
     login(driver)
 
@@ -313,15 +312,24 @@ def main():
                         inlesson(driver)
             sleep(10)
             name_box=0;both_class=0
-            driver.refresh()
-            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, 'tab-student')))
+            bad_network_count=0
+            try:
+                driver.refresh()
+                WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.ID, 'tab-student')))
+                bad_network_count=0
+            except:
+                bad_network_count+=1
+            if bad_network_count>9:
+                DingMsg("网络连接错误连续超过10次")
+                sleep(5)
+                exit(-1)
             if cre_i>=10:
                 try:
                     check_cred_valid(driver)
                 except:
                     login(driver)
     except Exception as e:
-        print("未知错误，即将退出:",str(e))
+        DingMsg("未知错误，即将退出:"+str(e))
         sleep(5)
         driver.close()
 
@@ -330,4 +338,10 @@ if '__main__' == __name__:
     if not os.getenv("RUNNING_IN_DOCKER"):
         import dotenv
         dotenv.load_dotenv('.env')
+    changjiang = {
+        "changjiang_user": os.getenv("CHANGJIANG_USER"),
+        "changjiang_password": os.getenv("CHANGJIANG_PASSWORD"),
+        "csrftoken": os.getenv("CSRFTOKEN"),
+        "sessionid": os.getenv("SESSIONID"),
+    }
     main()
